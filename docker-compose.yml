@@ -1,0 +1,37 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: laravel_mysql
+    restart: always
+    environment:
+      MYSQL_DATABASE: laravel
+      MYSQL_USER: laravel
+      MYSQL_PASSWORD: laravel
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3306:3306"
+
+  laravel:
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    build:
+      context: .
+      dockerfile: docker/laravel.dockerfile
+      args:
+        UID: 1000
+        GID: 1000
+    container_name: laravel_app
+    ports:
+      - 8000:8000
+    volumes:
+      - ./laravel:/app
+    environment:
+      DB_CONNECTION: mysql
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: laravel
+      DB_USERNAME: laravel
+      DB_PASSWORD: laravel
+    depends_on:
+      - mysql
