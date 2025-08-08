@@ -27,13 +27,6 @@ jobs:
         working-directory: laravel
         run: composer install --no-interaction --prefer-dist --optimize-autoloader
 
-      - name: Clear caches
-        working-directory: laravel
-        run: |
-          php artisan config:clear
-          php artisan route:clear
-          php artisan cache:clear
-
       - name: Run Pest tests
         working-directory: laravel
         run: ./vendor/bin/pest
