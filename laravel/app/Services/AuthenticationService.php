@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Auth;
+use App\DTO\TokenDTO;
 
 class AuthenticationService {
 
@@ -17,6 +18,6 @@ class AuthenticationService {
 
         $token = $user->createToken('access_token')->plainTextToken;
 
-        return ['access_token' => $token, 'token_type' => 'Bearer'];
+        return new TokenDTO($token);
     }
 }

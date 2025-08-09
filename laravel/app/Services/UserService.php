@@ -17,8 +17,11 @@ class UserService {
          return $this->repository->findById($id);
     }
 
-
     public function findByEmail(string $email): ?User {
         return $this->repository->findByEmail($email);
+    }
+
+    public function createUser(array $fields): ?User {
+        return $this->repository->create($fields);
     }
 }
