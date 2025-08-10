@@ -3,52 +3,111 @@
 use Illuminate\Support\Facades\Auth;
 use App\Services\AuthenticationService;
 use App\Models\User;
+use App\Models\Role;
+use App\Services\AuthService;
+use App\Interfaces\UserRepositoryInterface;
+use App\Interfaces\HashInterface;
+use App\Interfaces\TokenServiceInterface;
+use Mockery;
 
 beforeEach(function() {
-    $this->authService = new AuthenticationService();
+    $this->mockUserRepo = Mockery::mock(UserRepositoryInterface::class);
+    $this->mockHash = Mockery::mock(HashInterface::class);
+    $this->mockTokenService = Mockery::mock(TokenServiceInterface::class);
+    $this->authService = new AuthenticationService($this->mockUserRepo, $this->mockHash, $this->mockTokenService);
 });
 
-test("returns true when login is successful", function() {
-    $email = "test@mail.com";
-    $password = "secret";
-    $tokenString = "token-string";
-
-    $expected = ['access_token' => $tokenString, 'token_type' => 'Bearer'];
-
-    Auth::shouldReceive("attempt")
-            ->once()
-            ->with(["email" => $email, "password" => $password])
-            ->andReturn($expected);
-
-    $mockUser = mockery::mock(User::class);
-    $mockUser->shouldReceive("createToken")
-                ->once()
-                ->with("access_token")
-                ->andReturn((object)["plainTextToken" => $tokenString]);
-
-    Auth::shouldReceive("user")
-            ->once()
-            ->andReturn($mockUser);
-
-
-    $result = $this->authService->login($email, $password);
-    expect($result)->not->toBeNull();
+afterEach(function() {
+    Mockery::close();
 });
 
-test('returns null when login fails', function () {
-    $email = 'test@mail.com';
-    $password = 'secret';
+test("registers successfully and creates access token", function() {
 
-    // Mock Auth::attempt to return false
-    Auth::shouldReceive('attempt')
+    $userData = [
+        "name" => "tester",
+        "email" => "tester@mail.com",
+        "password" => "secret123",
+    ];
+
+    $hashedPassword = "hashed-password";
+    $token = "generated_token";
+
+    $this->mockHash->shouldReceive("make")
+    ->once()
+    ->with($userData["password"])
+    ->andReturn($hashedPassword);
+
+    $mockUser = User::factory()->make([
+        "id" => 1,
+        "name" => $userData["name"],
+        "email" => $userData["email"],
+        "password" => $hashedPassword,
+    ]);
+
+
+    $this->mockUserRepo->shouldReceive("create")
         ->once()
-        ->with(['email' => $email, 'password' => $password])
-        ->andReturn(false);
+        ->with([
+            "name" => $userData["name"],
+            "email" => $userData["email"],
+            "password" => $hashedPassword,
+        ])
+        ->andReturn($mockUser);
 
-    // Auth::user should never be called on failure
-    Auth::shouldReceive('user')->never();
+    $this->mockTokenService->shouldReceive("createToken")
+        ->once()
+        ->with($mockUser, "access_token")
+        ->andReturn($token);
 
-    $result = $this->authService->login($email, $password);
+    $result = $this->authService->register($userData);
 
-    expect($result)->toBeNull();
+    expect($result)->toBeArray();
+    expect($result)->toHaveKeys(['user', 'access_token']);
+    expect($result['user'])->toBe($mockUser);
+    expect($result['access_token'])->toBe($token);
+});
+
+test("logins successfully and creates access token", function() {
+    $loginInput = [
+        "email" => "test@mail.com",
+        "password" => "secret123"
+    ];
+
+    $hashedPassword = "hashed-password";
+    $token = "generated-token";
+
+    $mockUser = User::factory()->make([
+        "id" => 1,
+        "name" => "tester",
+        "email" => "test@mail.com",
+        "password" => $hashedPassword,
+    ]);
+
+    $this->mockUserRepo->shouldReceive("findByEmail")
+        ->once()
+        ->with($loginInput["email"])
+        ->andReturn($mockUser);
+
+
+    $this->mockHash->shouldReceive("check")
+        ->once()
+        ->with($loginInput["password"], $mockUser["password"])
+        ->andReturn(true);
+
+
+    $this->mockTokenService->shouldReceive("revokeAllTokens")
+        ->once()
+        ->with($mockUser)
+        ->andReturn(true);
+
+
+    $this->mockTokenService->shouldReceive("createToken")
+        ->once()
+        ->with($mockUser, "access_token")
+        ->andReturn($token);
+
+    $result = $this->authService->login($loginInput);
+
+    expect($result)->toBeArray();
+    expect($result)->toHaveKeys(['user', 'access_token']);
 });
