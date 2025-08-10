@@ -7,4 +7,5 @@ Route::prefix("auth")
     ->controller(AuthenticationController::class)
     ->group(function () {
         Route::post("/login", "login");
+        Route::post("/register", "register");
     });

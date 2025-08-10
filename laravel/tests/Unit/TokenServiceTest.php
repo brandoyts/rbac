@@ -1,58 +1,38 @@
 <?php
 
-use Mockery;
-use App\Interfaces\UserRepositoryInterface;
 use App\Services\TokenService;
 use App\Models\User;
 
 beforeEach(function() {
-    $this->mockUser = User::factory()->make([
-        "id" => 1,
-        "name" => "user1",
-        "email" => "user@mail.com",
-        "password" => "secret123",
-    ]);
-
-    $this->mockUserRepository = Mockery::mock(UserRepositoryInterface::class);
-    $this->service = new TokenService($this->mockUserRepository);
-});
-
-afterEach(function() {
-    Mockery::close();
+    $this->mockUser = mock(User::class);
+    $this->service = new TokenService();
 });
 
 test("successfully create a new token", function(){
     $token = "generated-token";
     $tokenName = "access_token";
 
-    $mockUser = User::factory()->make([
-        "id" => 1,
-        "name" => "user1",
-        "email" => "user@mail.com",
-        "password" => "secret123",
-    ]);
-
-    $this->mockUserRepository->shouldReceive("createToken")
+    $this->mockUser->shouldReceive("createToken")
         ->once()
         ->with($tokenName)
         ->andReturn((object)["plainTextToken" => $token]);
 
 
-    $result = $this->service->createToken($mockUser, $tokenName);
+    $result = $this->service->createToken($this->mockUser, $tokenName);
 
     expect($result)->toBe($token);
 });
 
 test("successfully revoke current token", function() {
-    $mockToken = Mockery::mock();
-    $mockToken->shouldReceive("delete")
+    $mockTokenDelete = mock();
+    $mockTokenDelete->shouldReceive("delete")
         ->once()
         ->andReturn(true);
 
-    $this->mockUserRepository
+    $this->mockUser
         ->shouldReceive("currentAccessToken")
         ->once()
-        ->andReturn($mockToken);
+        ->andReturn($mockTokenDelete);
 
     $result = $this->service->revokeCurrentToken($this->mockUser);
 
@@ -61,15 +41,15 @@ test("successfully revoke current token", function() {
 
 
 test("successfully revoke all tokens", function () {
-    $mockTokens = Mockery::mock();
-    $mockTokens->shouldReceive("delete")
+    $mockTokenDelete = mock();
+    $mockTokenDelete->shouldReceive("delete")
         ->once()
         ->andReturn(true);
 
-    $this->mockUserRepository
+    $this->mockUser
         ->shouldReceive("tokens")
         ->once()
-        ->andReturn($mockTokens);
+        ->andReturn($mockTokenDelete);
 
     $result = $this->service->revokeAllTokens($this->mockUser);
 

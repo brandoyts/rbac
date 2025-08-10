@@ -8,17 +8,12 @@ use App\Services\AuthService;
 use App\Interfaces\UserRepositoryInterface;
 use App\Interfaces\HashInterface;
 use App\Interfaces\TokenServiceInterface;
-use Mockery;
 
 beforeEach(function() {
-    $this->mockUserRepo = Mockery::mock(UserRepositoryInterface::class);
-    $this->mockHash = Mockery::mock(HashInterface::class);
-    $this->mockTokenService = Mockery::mock(TokenServiceInterface::class);
+    $this->mockUserRepo = mock(UserRepositoryInterface::class);
+    $this->mockHash = mock(HashInterface::class);
+    $this->mockTokenService = mock(TokenServiceInterface::class);
     $this->authService = new AuthenticationService($this->mockUserRepo, $this->mockHash, $this->mockTokenService);
-});
-
-afterEach(function() {
-    Mockery::close();
 });
 
 test("registers successfully and creates access token", function() {

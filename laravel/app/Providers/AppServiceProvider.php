@@ -4,8 +4,14 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use App\Interfaces\UserRepositoryInterface;
+use App\Interfaces\TokenServiceInterface;
+use App\Interfaces\HashInterface;
 use App\Services\UserService;
+use App\Services\TokenService;
 use App\Repositories\UserRepository;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Contracts\Hashing\Hasher;
+use App\Services\Core\HashService;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -14,17 +20,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->registerUserService();
-    }
-
-    public function registerUserService() {
-        // Bind interface to concrete repository
-        $this->app->bind(UserRepositoryInterface::class, UserRepository::class);
-
-        // Bind service with repository injected
-        $this->app->bind(UserService::class, function($app) {
-            return new UserService($app->make(UserRepositoryInterface::class));
-        });
     }
 
     /**

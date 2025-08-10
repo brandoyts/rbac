@@ -2,11 +2,11 @@
 
 namespace App\Interfaces;
 
-use App\Models\User;
+use Illuminate\Contracts\Auth\Authenticatable;
 
 interface TokenServiceInterface
 {
-    public function createToken(User $user, string $name): string;
-    public function revokeCurrentToken(User $user): bool;
-    public function revokeAllTokens(User $user): bool;
+    public function createToken(Authenticatable $user, string $name): string;
+    public function revokeCurrentToken(Authenticatable $user): bool;
+    public function revokeAllTokens(Authenticatable $user): bool;
 }

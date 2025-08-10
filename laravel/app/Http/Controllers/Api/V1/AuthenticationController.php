@@ -5,6 +5,9 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Services\AuthenticationService;
+use App\Http\Requests\RegisterUserRequest;
+use App\Http\Requests\LoginRequest;
+use Illuminate\Validation\ValidationException;
 
 class AuthenticationController extends Controller
 {
@@ -16,13 +19,35 @@ class AuthenticationController extends Controller
         $this->authenticationService = $authenticationService;
     }
 
-    public function login(Request $request) {
-        $result = $this->authenticationService->login($request->email, $request->password);
+    public function register(RegisterUserRequest $request) {
+        $validated = $request->validated();
 
-        if (!$result) {
-            return response()->json(["message" => self::INVALID_CREDENTIALS], 401);
+        $result = $this->authenticationService->register($validated);
+
+        return response()->json([
+            "status" => "success",
+            "data" => $result
+        ], 201);
+    }
+
+    public function login(LoginRequest $request) {
+        $credentials = $request->validated();
+
+        try {
+            $result = $this->authenticationService->login($credentials);
+
+            return response()->json([
+                "status" => "success",
+                "data" => $result
+            ], 200);
+        } catch(ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid credentials',
+                'errors' => $e->errors(),
+            ], 422);
         }
 
-        return response()->json($result, 200);
+        
     }
 }

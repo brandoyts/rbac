@@ -7,6 +7,9 @@ use App\DTO\TokenDTO;
 use App\Interfaces\UserRepositoryInterface;
 use App\Interfaces\TokenServiceInterface;
 use App\Interfaces\HashInterface;
+use Illuminate\Validation\ValidationException;
+use App\Exceptions\AuthenticationException;
+
 
 class AuthenticationService {
     protected $userRepository;
@@ -20,7 +23,7 @@ class AuthenticationService {
     }
 
     public function register(array $data, string $defaultRole = "user"): array {
-        $data["password"] = $this->hasher->make($data["password"]);
+        $data["password"] = $this->hasher->make(value: $data["password"]);
 
         $user = $this->userRepository->create($data);
 
@@ -39,9 +42,7 @@ class AuthenticationService {
         $user = $this->userRepository->findByEmail($credentials["email"]);
 
         if (!$user || !$this->hasher->check($credentials['password'], $user->password)) {
-            throw ValidationException::withMessages([
-                'email' => ['The provided credentials are incorrect.'],
-            ]);
+            throw new AuthenticationException();
         }
 
         $this->tokenService->revokeAllTokens($user);
@@ -58,8 +59,4 @@ class AuthenticationService {
     public function logout(User $user): bool {
         return $this->tokenService->revokeCurrentToken($user);
     }
-
-
-
-
 }

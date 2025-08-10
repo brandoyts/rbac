@@ -6,7 +6,6 @@ use App\Interfaces\UserRepositoryInterface;
 use App\Models\User;
 
 class UserService {
-
     protected UserRepositoryInterface $repository;
 
     public function __construct(UserRepositoryInterface $repository) {
