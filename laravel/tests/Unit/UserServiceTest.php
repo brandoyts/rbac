@@ -5,10 +5,9 @@ use App\Interfaces\UserRepositoryInterface;
 use App\Services\UserService;
 use App\Repositories\UserRepository;
 use Illuminate\Support\Facades\DB;
-use Mockery;
 
 beforeEach(function() {
-    $this->mockRepo = Mockery::mock(UserRepositoryInterface::class);
+    $this->mockRepo = mock(UserRepositoryInterface::class);
     $this->service = new UserService($this->mockRepo);
 });
 
@@ -16,7 +15,7 @@ test('find user by email', function () {
     $email = "test@example.com";
     $user = new User(["email" => $email, "name" => "test"]);
 
-    $mockRepo = Mockery::mock(UserRepositoryInterface::class);
+    $mockRepo = mock(UserRepositoryInterface::class);
     $mockRepo->shouldReceive('findByEmail')
             ->once()
             ->with($email)
@@ -35,7 +34,7 @@ test("find user by id", function() {
     $user =  new User(["name" => "test"]);
     $user->id = $id;
 
-    $mockRepo = Mockery::mock(UserRepositoryInterface::class);
+    $mockRepo = mock(UserRepositoryInterface::class);
     $mockRepo->shouldReceive("findById")
             ->once()
             ->with($id)
@@ -51,7 +50,7 @@ test("find user by id", function() {
 test("no user found using provided id", function() {
     $id = 1;
 
-    $mockRepo = Mockery::mock(UserRepositoryInterface::class);
+    $mockRepo = mock(UserRepositoryInterface::class);
     $mockRepo->shouldReceive("findById")
             ->once()
             ->with($id)
@@ -66,7 +65,7 @@ test("no user found using provided id", function() {
 test("no user found using provided email", function() {
     $email = "test@mail.com";
 
-    $mockRepo = Mockery::mock(UserRepositoryInterface::class);
+    $mockRepo = mock(UserRepositoryInterface::class);
     $mockRepo->shouldReceive("findByEmail")
             ->once()
             ->with($email)
