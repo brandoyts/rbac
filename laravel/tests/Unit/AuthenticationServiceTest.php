@@ -32,12 +32,20 @@ test("registers successfully and creates access token", function() {
     ->with($userData["password"])
     ->andReturn($hashedPassword);
 
-    $mockUser = User::factory()->make([
-        "id" => 1,
-        "name" => $userData["name"],
-        "email" => $userData["email"],
-        "password" => $hashedPassword,
-    ]);
+    $mockUser = Mockery::mock(User::class)->makePartial();
+    $mockUser->shouldIgnoreMissing();
+
+    $mockUser->id = 1;
+    $mockUser->name = $userData["name"];
+    $mockUser->email = $userData["email"];
+    $mockUser->password = $hashedPassword;
+
+    // Stub role-related methods
+    $mockUser->shouldReceive('roles')->andReturn(collect());
+    $mockUser->shouldReceive('hasRole')->andReturn(true);
+    $mockUser->shouldReceive('hasPermission')->andReturn(true);
+    $mockUser->shouldReceive('assignRole')->andReturnSelf();
+    $mockUser->shouldReceive('removeRole')->andReturnSelf();
 
 
     $this->mockUserRepo->shouldReceive("create")
@@ -62,47 +70,53 @@ test("registers successfully and creates access token", function() {
     expect($result['access_token'])->toBe($token);
 });
 
-test("logins successfully and creates access token", function() {
+test("logins successfully and creates access token", function () {
+    // Arrange
     $loginInput = [
         "email" => "test@mail.com",
         "password" => "secret123"
     ];
 
-    $hashedPassword = "hashed-password";
-    $token = "generated-token";
+    $mockUser = mock(User::class)->makePartial();
+    $mockUser->id = 1;
+    $mockUser->name = "tester";
+    $mockUser->email = $loginInput["email"];
+    $mockUser->password = "hashed-password";
 
-    $mockUser = User::factory()->make([
-        "id" => 1,
-        "name" => "tester",
-        "email" => "test@mail.com",
-        "password" => $hashedPassword,
-    ]);
+    $mockUser->shouldReceive('load')
+        ->once()
+        ->with('roles')
+        ->andReturnSelf();
 
     $this->mockUserRepo->shouldReceive("findByEmail")
         ->once()
         ->with($loginInput["email"])
         ->andReturn($mockUser);
 
-
     $this->mockHash->shouldReceive("check")
         ->once()
-        ->with($loginInput["password"], $mockUser["password"])
+        ->with($loginInput["password"], $mockUser->password)
         ->andReturn(true);
-
 
     $this->mockTokenService->shouldReceive("revokeAllTokens")
         ->once()
         ->with($mockUser)
         ->andReturn(true);
 
-
     $this->mockTokenService->shouldReceive("createToken")
         ->once()
         ->with($mockUser, "access_token")
-        ->andReturn($token);
+        ->andReturn("generated-token");
 
+    // Act
     $result = $this->authService->login($loginInput);
 
-    expect($result)->toBeArray();
-    expect($result)->toHaveKeys(['user', 'access_token']);
+    // Assert
+    expect($result)
+        ->toBeArray()
+        ->toHaveKeys(['user', 'access_token', 'token_type'])
+        ->and($result['access_token'])->toBe("generated-token")
+        ->and($result['user'])->toBe($mockUser);
 });
+
+
